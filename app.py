@@ -236,8 +236,7 @@ st.markdown(
         margin-left: 1rem;
     }
     .field-conf-dot {
-        width: 8px;
-        height: 8px;
+        width: 8px; height: 8px;
         border-radius: 50%;
         display: inline-block;
     }
@@ -245,10 +244,7 @@ st.markdown(
     .dot-medium { background: #f59e0b; }
     .dot-low    { background: #e53935; }
     .dot-unknown{ background: var(--mountain); }
-    .field-conf-pct {
-        font-size: 0.78rem;
-        font-weight: 600;
-    }
+    .field-conf-pct { font-size: 0.78rem; font-weight: 600; }
     .field-conf-high   { color: #2a5226; }
     .field-conf-medium { color: #7a4e10; }
     .field-conf-low    { color: #7a2020; }
@@ -260,8 +256,6 @@ st.markdown(
         padding: 0.5rem 1.25rem;
         margin-bottom: 1rem;
     }
-
-    /* ── Table section ── */
     .table-section {
         background: #FAF7F2;
         border: 1px solid var(--sand);
@@ -276,7 +270,6 @@ st.markdown(
         color: var(--mountain);
         margin-bottom: 0.5rem;
     }
-
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: var(--vanilla); }
     ::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 10px; }
@@ -293,12 +286,9 @@ def api_headers():
 
 def conf_class(label: str) -> str:
     label = label.upper()
-    if label == "HIGH":
-        return "field-conf-high"
-    elif label == "MEDIUM":
-        return "field-conf-medium"
-    elif label == "LOW":
-        return "field-conf-low"
+    if label == "HIGH":    return "field-conf-high"
+    elif label == "MEDIUM": return "field-conf-medium"
+    elif label == "LOW":    return "field-conf-low"
     return "field-conf-unknown"
 
 
@@ -306,28 +296,20 @@ def parse_confidence(conf_data) -> tuple:
     if isinstance(conf_data, dict):
         score = conf_data.get("document_confidence", 0.5)
         label = conf_data.get("confidence_label", "MEDIUM").upper()
-        if label == "HIGH":
-            return score, "conf-high", "High"
-        elif label == "LOW":
-            return score, "conf-low", "Low"
-        else:
-            return score, "conf-medium", "Medium"
+        if label == "HIGH":   return score, "conf-high", "High"
+        elif label == "LOW":  return score, "conf-low", "Low"
+        else:                 return score, "conf-medium", "Medium"
     elif isinstance(conf_data, (int, float)):
         score = float(conf_data)
-        if score >= 0.85:
-            return score, "conf-high", "High"
-        elif score >= 0.65:
-            return score, "conf-medium", "Medium"
-        else:
-            return score, "conf-low", "Low"
+        if score >= 0.85:   return score, "conf-high", "High"
+        elif score >= 0.65: return score, "conf-medium", "Medium"
+        else:               return score, "conf-low", "Low"
     return 0.5, "conf-medium", "Medium"
 
 
 def render_fields_with_confidence(fields: list) -> str:
-    """Render extracted fields as cards — label top, value bottom, confidence % right."""
     if not fields:
         return '<p style="color:var(--mountain);font-size:0.8rem;">No fields extracted.</p>'
-
     cards = ""
     for f in fields:
         label      = f.get("label", f.get("key", ""))
@@ -337,28 +319,52 @@ def render_fields_with_confidence(fields: list) -> str:
         css_cls    = conf_class(conf_lbl)
         conf_pct   = f"{confidence * 100:.0f}%"
         dot_cls    = f"dot-{conf_lbl.lower()}" if conf_lbl in ("HIGH", "MEDIUM", "LOW") else "dot-unknown"
-        cards += f'<div class="field-card"><div class="field-card-left"><div class="field-card-label">{label}</div><div class="field-card-value">{value}</div></div><div class="field-card-right"><span class="field-conf-dot {dot_cls}"></span><span class="field-conf-pct {css_cls}">{conf_pct}</span></div></div>'
-
+        cards += (
+            f'<div class="field-card">'
+            f'<div class="field-card-left">'
+            f'<div class="field-card-label">{label}</div>'
+            f'<div class="field-card-value">{value}</div>'
+            f'</div>'
+            f'<div class="field-card-right">'
+            f'<span class="field-conf-dot {dot_cls}"></span>'
+            f'<span class="field-conf-pct {css_cls}">{conf_pct}</span>'
+            f'</div></div>'
+        )
     return f'<div class="fields-container">{cards}</div>'
 
 
 def render_tables(tables: list) -> str:
-    """Render extracted tables as HTML."""
     if not tables:
         return ""
-
     html = ""
     for tbl in tables:
         name = tbl.get("table_name", "Table")
         rows = tbl.get("rows", [])
         if not rows:
             continue
-
         headers = list(rows[0].keys())
-        header_html = "".join(f'<th style="text-align:left;font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--mountain);border-bottom:1px solid var(--sand);padding:0.4rem 0.6rem;">{h}</th>' for h in headers)
-        rows_html = "".join(f'<tr>{"".join(f"<td style=\"padding:0.45rem 0.6rem;border-bottom:1px solid #f0ebe0;font-size:0.85rem;\">{row.get(h, "")}</td>" for h in headers)}</tr>' for row in rows)
-        html += f'<div class="table-section"><p class="table-name">{name}</p><table style="width:100%;border-collapse:collapse;"><thead><tr>{header_html}</tr></thead><tbody>{rows_html}</tbody></table></div>'
-
+        th_parts = []
+        for h in headers:
+            th_parts.append(
+                f'<th style="text-align:left;font-size:0.68rem;letter-spacing:0.15em;'
+                f'text-transform:uppercase;color:var(--mountain);border-bottom:1px solid var(--sand);'
+                f'padding:0.4rem 0.6rem;">{h}</th>'
+            )
+        th = "".join(th_parts)
+        tr_parts = []
+        for row in rows:
+            td_parts = []
+            for h in headers:
+                val = row.get(h, "")
+                td_parts.append(f'<td style="padding:0.45rem 0.6rem;border-bottom:1px solid #f0ebe0;font-size:0.85rem;">{val}</td>')
+            tr_parts.append("<tr>" + "".join(td_parts) + "</tr>")
+        tr = "".join(tr_parts)
+        html += (
+            f'<div class="table-section">'
+            f'<p class="table-name">{name}</p>'
+            f'<table style="width:100%;border-collapse:collapse;">'
+            f'<thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>'
+        )
     return html
 
 
@@ -366,7 +372,7 @@ def render_tables(tables: list) -> str:
 
 st.markdown('<p class="page-heading">BP Optima Document Extraction</p>', unsafe_allow_html=True)
 st.markdown(
-    '<p class="page-subheading">Qwen2-VL 2B &nbsp;·&nbsp; Vision Extraction &nbsp;+&nbsp; Qwen2.5 1.5B &nbsp;·&nbsp; JSON Structuring</p>',
+    '<p class="page-subheading">GLM-OCR 0.9B &nbsp;·&nbsp; Vision Extraction &nbsp;+&nbsp; Qwen2.5 1.5B &nbsp;·&nbsp; JSON Structuring</p>',
     unsafe_allow_html=True,
 )
 st.markdown('<hr class="thin-divider"/>', unsafe_allow_html=True)
@@ -378,8 +384,8 @@ st.markdown('<p class="api-label">Azure API Endpoint</p>', unsafe_allow_html=Tru
 col_url, col_status = st.columns([5, 1])
 with col_url:
     st.markdown(
-        f'<p style="font-size:0.85rem;color:var(--text-mid);padding-top:0.5rem;font-family:\'JetBrains Mono\',monospace;">'
-        f'{AZURE_API_URL}</p>',
+        f'<p style="font-size:0.85rem;color:var(--text-mid);padding-top:0.5rem;'
+        f'font-family:\'JetBrains Mono\',monospace;">{AZURE_API_URL}</p>',
         unsafe_allow_html=True,
     )
 with col_status:
@@ -530,24 +536,22 @@ if uploaded_file is not None and extract_clicked:
                 if response.status_code != 200:
                     st.error(f"API error: {response.status_code} — {response.text}")
                 else:
-                    data = response.json()
-
+                    data       = response.json()
                     doc_type   = data.get("document_type", "unknown")
                     fields     = data.get("fields", [])
                     tables     = data.get("tables", [])
                     raw_text   = data.get("raw_text", "")
                     conf_data  = data.get("confidence", {})
                     metadata   = data.get("metadata", {})
-                    structured = data.get("structured_json", {})
 
-                    total_pages  = metadata.get("pages_processed", 1)
-                    latency_ms   = metadata.get("latency_ms", 0)
-                    gpu_used     = metadata.get("gpu_utilised", False)
+                    total_pages   = metadata.get("pages_processed", 1)
+                    latency_ms    = metadata.get("latency_ms", 0)
+                    gpu_used      = metadata.get("gpu_utilised", False)
                     total_elapsed = latency_ms / 1000
 
                     conf_score, badge_cls, conf_label = parse_confidence(conf_data)
 
-                    # ── Meta row ──────────────────────────────────────────
+                    # Meta row
                     st.markdown(
                         f'<div class="meta-row">'
                         f'<span class="meta-item">Pages: <span class="meta-value">{total_pages}</span></span>'
@@ -557,29 +561,33 @@ if uploaded_file is not None and extract_clicked:
                         unsafe_allow_html=True,
                     )
 
-                    # ── Badges ────────────────────────────────────────────
+                    # Badges
                     badges = f'<span class="conf-badge {badge_cls}">Overall: {conf_score*100:.1f}% — {conf_label}</span>'
                     if doc_type:
                         badges += f' <span class="doc-type-badge">{doc_type.replace("_", " ")}</span>'
                     st.markdown(badges, unsafe_allow_html=True)
 
-                    # ── Fields with per-field confidence ──────────────────
+                    # Fields
                     st.markdown('<p class="panel-label" style="margin-top:1rem;">Extracted Fields</p>', unsafe_allow_html=True)
                     st.markdown(render_fields_with_confidence(fields), unsafe_allow_html=True)
 
-                    # ── Tables ────────────────────────────────────────────
+                    # Tables
                     if tables:
                         st.markdown('<p class="panel-label">Extracted Tables</p>', unsafe_allow_html=True)
                         st.markdown(render_tables(tables), unsafe_allow_html=True)
 
-                    # ── Raw text expander ─────────────────────────────────
+                    # Raw text expander
                     with st.expander("Raw Extracted Text (VLM output)", expanded=False):
                         st.markdown(
                             f'<div class="result-panel" style="min-height:unset;">{raw_text}</div>',
                             unsafe_allow_html=True,
                         )
 
-                    # ── Download full JSON ────────────────────────────────
+                    # JSON output
+                    with st.expander("JSON Output", expanded=False):
+                        st.json(data.get("structured_json", {}))
+
+                    # Download
                     st.download_button(
                         label="Download Full JSON",
                         data=json.dumps(data, indent=2, ensure_ascii=False),
